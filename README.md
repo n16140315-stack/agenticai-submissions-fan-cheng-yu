@@ -59,10 +59,10 @@ student-material-ecg-hrv/
 
 The example data and code repositories are included as git submodules:
 
-| Submodule | Repository |
-|-----------|------------|
-| `data-group/2026-Chen-Lin-Wang-data` | `git@bitbucket.org:nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-data.git` |
-| `project-code-group/2026-Chen-Lin-Wang-code` | `git@bitbucket.org:nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-code.git` |
+| Submodule | HTTPS URL | SSH URL |
+|-----------|-----------|---------|
+| `data-group/2026-Chen-Lin-Wang-data` | `https://bitbucket.org/nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-data.git` | `git@bitbucket.org:nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-data.git` |
+| `project-code-group/2026-Chen-Lin-Wang-code` | `https://bitbucket.org/nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-code.git` | `git@bitbucket.org:nordlinglab/nordlinglab-course-agenticai-ecg-hrv-example-code.git` |
 
 **For maintainers:** To set up these submodules, run from the main course repository:
 ```bash
@@ -156,9 +156,16 @@ git config --global user.email "your.email@example.com"
 
 #### If you don't have a Bitbucket account:
 
+> **WARNING: Do NOT use "Continue with Google" to sign up!**
+>
+> If you sign up with Google SSO, you won't have a password, which means you cannot use HTTPS to clone/push/pull repositories. You would need to set up SSH keys instead (more complicated for beginners).
+>
+> **Recommended:** Sign up with email and create a password. This allows you to use HTTPS URLs which are simpler.
+
 1. Go to https://bitbucket.org/account/signup/
-2. Sign up with your email (you can use your university email)
-3. **Important:** When prompted, create a **personal workspace** and give it a unique easy to remember name - this is where your fork will live. Other people find your forked repository in `https://bitbucket.org/THEWORKSPACENAMEYOUPICKED`
+2. Click **"Sign up with email"** (NOT "Continue with Google")
+3. Enter your email and create a **password** (you can use your university email)
+4. **Important:** When prompted, create a **personal workspace** and give it a unique easy to remember name - this is where your fork will live. Other people find your forked repository in `https://bitbucket.org/THE_WORKSPACE_NAME_YOU_PICKED`
 
 ### Step 4: Fork the Repository to Your Own Workspace
 
@@ -170,14 +177,14 @@ Since you have **read-only access** to the original repository, you must create 
 4. Select **"Fork this repository"**
 5. **IMPORTANT - Configure the fork:**
 
-   - **Workspace:** Select **THEWORKSPACENAMEYOUPICKED** (not `nordlinglab` - you don't have write access there)
+   - **Workspace:** Select **THE_WORKSPACE_NAME_YOU_PICKED** (not `nordlinglab` - you don't have write access there)
    - **Project:** Select or create a project in your workspace (e.g., "My Projects")
    - **Repository name:** Give it a name (e.g., `agenticai-ecg-hrv-submissions`)
    - **Access level:** Leave unchecked (public) so group members can access it, OR check "Private" and manually invite group members to the workspace
 
 6. Click **"Fork repository"**
 
-You now have your own copy at `https://bitbucket.org/THEWORKSPACENAMEYOUPICKED/YOUR_FORK_NAME/` where you can make changes.
+You now have your own copy at `https://bitbucket.org/THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME/` where you can make changes.
 
 **Common Error A:** If you see "Access denied" or "You don't have permission", you likely tried to fork into the `nordlinglab` workspace. Go back and select YOUR OWN workspace in the Workspace dropdown.
 
@@ -195,12 +202,18 @@ After creating a workspace, go back to the repository and try forking again - yo
 
 ### Step 5: Clone Your Fork
 
+Use either HTTPS (simpler, requires password) or SSH (requires key setup):
+
 ```bash
 # Navigate to where you want to store the project
 cd ~/Documents
 
 # Clone YOUR fork with submodules (not the original repository)
-git clone --recursive git@bitbucket.org:THEWORKSPACENAMEYOUPICKED/YOUR_FORK_NAME.git
+# Option 1: HTTPS (recommended for beginners - uses your Atlassian password)
+git clone --recursive https://bitbucket.org/THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
+
+# Option 2: SSH (if you have SSH keys set up)
+git clone --recursive git@bitbucket.org:THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
 
 # Enter the project directory
 cd YOUR_FORK_NAME
@@ -235,6 +248,9 @@ cd case-brief-individual
 git status
 
 # Stage your new file(s)
+# Option 1: If you are in the folder case-brief-individual
+git add YYYY-YourFamilyName-YourFirstName.md
+# Option 2: If you are in the root of the repository
 git add case-brief-individual/YYYY-YourFamilyName-YourFirstName.md
 
 # Commit with a descriptive message
@@ -285,9 +301,16 @@ If the original repository is updated, sync your fork:
 
 ```bash
 # Add the original repo as "upstream" (do this once)
+# Option 1: HTTPS
+git remote add upstream https://bitbucket.org/nordlinglab/nordlinglab-course-agenticai-ecg-hrv.git
+# Option 2: SSH
 git remote add upstream git@bitbucket.org:nordlinglab/nordlinglab-course-agenticai-ecg-hrv.git
-# or if you forked a group members repository
-git remote add upstream git@bitbucket.org:THEWORKSPACENAMEYOURGROUPMEMBERPICKED/YOUR_GROUP_MEMBERS_FORK_NAME.git
+
+# Or if you forked a group member's repository:
+# Option 1: HTTPS
+git remote add upstream https://bitbucket.org/THE_WORKSPACE_NAME_YOUR_GROUP_MEMBER_PICKED/YOUR_GROUP_MEMBERS_FORK_NAME.git
+# Option 2: SSH
+git remote add upstream git@bitbucket.org:THE_WORKSPACE_NAME_YOUR_GROUP_MEMBER_PICKED/YOUR_GROUP_MEMBERS_FORK_NAME.git
 
 # Fetch updates from original (including submodules)
 git fetch upstream
@@ -338,7 +361,11 @@ git remote -v
 If it shows `nordlinglab` in the URL, you cloned the original instead of your fork. Fix it:
 
 ```bash
-git remote set-url origin git@bitbucket.org:THEWORKSPACENAMEYOUPICKED/YOUR_FORK_NAME.git
+# Option 1: HTTPS (recommended for beginners)
+git remote set-url origin https://bitbucket.org/THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
+
+# Option 2: SSH (if you have SSH keys set up)
+git remote set-url origin git@bitbucket.org:THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
 ```
 
 ### Merge conflicts
@@ -357,6 +384,185 @@ If you named your file incorrectly:
 git mv old-name.md YYYY-CorrectName-Format.md
 git commit -m "Fix file naming"
 git push
+```
+
+### Cannot git push/pull - "Password required" but signed up with Google
+
+**Problem:** You signed up with "Continue with Google" and now git asks for a password when you try to push/pull, but you don't have one.
+
+**Two solutions:**
+
+#### Solution A: Create an Atlassian password (Recommended for beginners)
+
+1. Go to https://id.atlassian.com/manage-profile/security
+2. Click **"Create password"** or **"Set password"**
+3. Enter a new password and confirm it
+4. Now you can use HTTPS URLs with your email and this new password
+
+When git asks for credentials:
+- **Username:** Your Atlassian email address
+- **Password:** The password you just created
+
+#### Solution B: Set up SSH keys (More advanced but more convenient long-term)
+
+SSH keys let you authenticate without entering a password each time. Follow the instructions below for your operating system.
+
+---
+
+### Setting up SSH Keys for Bitbucket
+
+#### macOS
+
+**Step 1: Check for existing SSH keys**
+```bash
+ls -la ~/.ssh
+```
+If you see `id_ed25519` and `id_ed25519.pub` (or `id_rsa` and `id_rsa.pub`), you already have keys. Skip to Step 3.
+
+**Step 2: Generate a new SSH key**
+```bash
+ssh-keygen -t ed25519 -C "your.email@example.com"
+```
+- Press Enter to accept the default file location
+- Enter a passphrase (optional but recommended) or press Enter for no passphrase
+
+**Step 3: Start the SSH agent and add your key**
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Step 4: Copy your public key**
+```bash
+pbcopy < ~/.ssh/id_ed25519.pub
+```
+This copies the key to your clipboard.
+
+**Step 5: Add the key to Bitbucket**
+1. Go to https://bitbucket.org/account/settings/ssh-keys/
+2. Click **"Add key"**
+3. Give it a label (e.g., "My MacBook")
+4. Paste the key (Cmd+V)
+5. Click **"Add key"**
+
+**Step 6: Test the connection**
+```bash
+ssh -T git@bitbucket.org
+```
+You should see: "authenticated via ssh key" or similar.
+
+**Step 7: Update your repository to use SSH**
+```bash
+cd YOUR_FORK_NAME
+git remote set-url origin git@bitbucket.org:THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
+```
+
+---
+
+#### Windows
+
+**Step 1: Open Git Bash**
+If you installed Git for Windows, you have Git Bash. Search for "Git Bash" in the Start menu.
+
+**Step 2: Check for existing SSH keys**
+```bash
+ls -la ~/.ssh
+```
+If you see `id_ed25519` and `id_ed25519.pub`, you already have keys. Skip to Step 4.
+
+**Step 3: Generate a new SSH key**
+```bash
+ssh-keygen -t ed25519 -C "your.email@example.com"
+```
+- Press Enter to accept the default file location
+- Enter a passphrase (optional) or press Enter for no passphrase
+
+**Step 4: Start the SSH agent and add your key**
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Step 5: Copy your public key**
+```bash
+clip < ~/.ssh/id_ed25519.pub
+```
+This copies the key to your clipboard.
+
+**Step 6: Add the key to Bitbucket**
+1. Go to https://bitbucket.org/account/settings/ssh-keys/
+2. Click **"Add key"**
+3. Give it a label (e.g., "My Windows PC")
+4. Paste the key (Ctrl+V)
+5. Click **"Add key"**
+
+**Step 7: Test the connection**
+```bash
+ssh -T git@bitbucket.org
+```
+You should see: "authenticated via ssh key" or similar.
+
+**Step 8: Update your repository to use SSH**
+```bash
+cd YOUR_FORK_NAME
+git remote set-url origin git@bitbucket.org:THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
+```
+
+---
+
+#### Linux (Ubuntu/Debian)
+
+**Step 1: Check for existing SSH keys**
+```bash
+ls -la ~/.ssh
+```
+If you see `id_ed25519` and `id_ed25519.pub`, you already have keys. Skip to Step 3.
+
+**Step 2: Generate a new SSH key**
+```bash
+ssh-keygen -t ed25519 -C "your.email@example.com"
+```
+- Press Enter to accept the default file location
+- Enter a passphrase (optional but recommended) or press Enter for no passphrase
+
+**Step 3: Start the SSH agent and add your key**
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Step 4: Copy your public key**
+```bash
+# Install xclip if not installed
+sudo apt install xclip
+
+# Copy to clipboard
+xclip -selection clipboard < ~/.ssh/id_ed25519.pub
+```
+
+Or manually display and copy:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+Then select and copy the output.
+
+**Step 5: Add the key to Bitbucket**
+1. Go to https://bitbucket.org/account/settings/ssh-keys/
+2. Click **"Add key"**
+3. Give it a label (e.g., "My Linux PC")
+4. Paste the key (Ctrl+Shift+V in terminal, or Ctrl+V in browser)
+5. Click **"Add key"**
+
+**Step 6: Test the connection**
+```bash
+ssh -T git@bitbucket.org
+```
+You should see: "authenticated via ssh key" or similar.
+
+**Step 7: Update your repository to use SSH**
+```bash
+cd YOUR_FORK_NAME
+git remote set-url origin git@bitbucket.org:THE_WORKSPACE_NAME_YOU_PICKED/YOUR_FORK_NAME.git
 ```
 
 ---
