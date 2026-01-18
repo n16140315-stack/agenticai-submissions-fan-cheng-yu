@@ -29,6 +29,119 @@ This includes but is not limited to:
 
 **Violation of this policy may result in immediate removal of your submission and disciplinary action.**
 
+### Pull Request Branch Requirements
+
+**DO NOT submit pull requests from your `main` branch!**
+
+Always create a feature branch for your submissions:
+
+```bash
+# WRONG - Do not do this:
+# (making changes directly on main and creating PR from main)
+
+# CORRECT - Always do this:
+git checkout -b submission/YYYY-YourName-type
+# Example: git checkout -b submission/2026-Chen-Wei-ssh-key
+```
+
+**Why this matters:**
+- PRs from `main` cause merge conflicts when other students' PRs are merged first
+- Feature branches can be safely deleted after merge (main cannot)
+- This is standard industry practice for collaborative Git workflows
+
+**Branch naming convention:** `submission/YYYY-FamilyName-type`
+
+Examples:
+- `submission/2026-Chen-Wei-ssh-key`
+- `submission/2026-Lin-MeiLing-case-brief`
+- `submission/2026-Chen-Lin-Wang-slides` (group)
+
+See [Creating a Submission Branch](#creating-a-submission-branch) for detailed instructions.
+
+### Creating a Submission Branch
+
+Follow these steps to properly create a feature branch for your submission:
+
+**Step 1: Ensure your fork is up to date**
+
+```bash
+# Fetch updates from the upstream repository
+git fetch upstream
+
+# Switch to your main branch
+git checkout main
+
+# Merge any upstream changes
+git merge upstream/main
+
+# Push updates to your fork
+git push origin main
+```
+
+**Step 2: Create a feature branch from main**
+
+```bash
+# Create and switch to a new branch
+git checkout -b submission/YYYY-YourFamilyName-type
+
+# Examples:
+# git checkout -b submission/2026-Chen-ssh-key
+# git checkout -b submission/2026-Lin-case-brief
+# git checkout -b submission/2026-Chen-Lin-Wang-slides  (group)
+```
+
+**Step 3: Make your changes**
+
+```bash
+# Navigate to the appropriate folder and create your file
+cd case-brief-individual/  # or the relevant folder
+# Create/edit your file following the naming convention
+
+# Stage your changes
+git add YYYY-YourFamilyName-YourFirstName.md
+
+# Commit with a descriptive message
+git commit -m "Add case brief for YourName"
+```
+
+**Step 4: Push your feature branch to your fork**
+
+```bash
+# Push the feature branch (NOT main!)
+git push origin submission/YYYY-YourFamilyName-type
+
+# Example:
+# git push origin submission/2026-Chen-ssh-key
+```
+
+**Step 5: Create the Pull Request**
+
+```bash
+# Using GitHub CLI (recommended)
+gh pr create --repo nordlinglab/course-agenticai-ecg-hrv \
+  --title "Submission: YYYY-YourFamilyName - [type]" \
+  --body "Description of what you're submitting"
+
+# Or use the GitHub web interface:
+# 1. Go to your fork on GitHub
+# 2. You'll see a prompt to create a PR from your new branch
+# 3. Click "Compare & pull request"
+# 4. Ensure the PR is from YOUR feature branch to upstream main
+```
+
+**After the PR is merged:**
+
+```bash
+# Switch back to main
+git checkout main
+
+# Delete your local feature branch
+git branch -d submission/YYYY-YourFamilyName-type
+
+# Delete the remote feature branch (optional, often done automatically)
+git push origin --delete submission/YYYY-YourFamilyName-type
+```
+
 ---
 
 ## Repository Structure
