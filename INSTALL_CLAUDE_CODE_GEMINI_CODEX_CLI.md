@@ -427,9 +427,21 @@ Containers on macOS run inside a Linux VM via Apple's Hypervisor.framework, whic
 
 #### Apple's Native Container Tool (macOS 26+)
 
-Apple introduced a first-party container framework at WWDC 2025, included in macOS 26 "Tahoe". However, **GPU passthrough is not supported**.
+Apple introduced a first-party container framework at WWDC 2025, included in macOS 26 "Tahoe". It uses a **VM-per-container architecture** (similar to Kata Containers), providing stronger isolation than Docker or Podman.
 
-The maintainers confirmed: *"We do not currently support this."* ([GitHub Discussion #62](https://github.com/apple/container/discussions/62))
+**Key characteristics:**
+- Written entirely in Swift, optimized for Apple Silicon
+- Each container runs in its own lightweight VM with a dedicated Linux kernel
+- OCI-compatible (works with any container registry)
+- Container startup under 1 second
+- Free and open source (no license fees)
+
+**Limitations:**
+- **No GPU passthrough** - confirmed by maintainers ([GitHub Discussion #62](https://github.com/apple/container/discussions/62))
+- **Memory inefficient** - each container requires full kernel overhead
+- **Slow image unpacking** - Swift ext4 implementation not yet optimized (large images may take minutes)
+- **Pre-1.0 stability** - minor versions may include breaking changes
+- **No Docker Compose equivalent** - single container focus
 
 **Installation (macOS 26 Tahoe required):**
 ```bash
@@ -498,18 +510,68 @@ podman run --device /dev/dri -it fedora:40
 
 ### Recommendation Summary
 
-| Scenario | Recommendation |
-|----------|---------------|
-| **General use on macOS** | Docker Desktop (more polished) |
-| **macOS 26 Tahoe users** | Apple Container (native, no license fees, no GPU) |
-| **Enterprise on macOS** | Podman Desktop (no license fees) |
-| **Linux servers** | Podman (rootless, better security) |
-| **Linux desktop** | Either (both work well) |
-| **Windows development** | Docker Desktop (better GPU support) |
-| **GPU workloads (Linux)** | Docker on Linux (simpler setup) |
-| **GPU workloads (macOS)** | Run natively, or Podman with libkrun (Vulkan only) |
-| **Security-critical** | Podman (daemonless, rootless) |
-| **Kubernetes workflows** | Podman (native pod support) |
+| Scenario | macOS | Windows | Linux |
+|----------|-------|---------|-------|
+| **General development** | Docker Desktop | Docker Desktop | docker or podman |
+| **Simple single-container** | Apple Container (macOS 26+) | Docker Desktop | podman |
+| **Multi-container / Compose** | Docker Desktop | Docker Desktop | docker or podman |
+| **Maximum isolation** | Apple Container (VM-per-container) | Docker Desktop (Hyper-V) | podman (rootless) |
+| **Enterprise (license-free)** | Podman Desktop or Apple Container | Podman Desktop | podman |
+| **Learning / Beginners** | Apple Container (macOS 26+) | Docker Desktop | podman |
+| **GPU workloads** | Native (Metal/MLX) or Docker Model Runner | Docker Desktop (WSL2 + CUDA) | docker (`--gpus` flag) |
+| **Kubernetes workflows** | Podman Desktop | Podman Desktop | podman |
+| **Server / headless** | Apple Container or podman machine | N/A | podman (rootless, systemd) |
+| **Large images, frequent rebuilds** | Docker Desktop or Podman Desktop | Docker Desktop | docker or podman |
+| **Security-critical** | Apple Container or Podman Desktop | Podman Desktop | podman (rootless) |
+| **Isolated AI CLIs (Claude, Gemini, Codex)** | Docker Desktop + Model Runner | Docker Desktop | docker or podman |
+
+#### Desktop vs CLI-Only Versions
+
+**Docker Desktop vs docker (Docker Engine):**
+
+| Aspect | Docker Desktop | docker (Docker Engine) |
+|--------|---------------|------------------------|
+| **Platforms** | macOS, Windows, Linux | Linux only (native) |
+| **Architecture** | GUI app + Linux VM | CLI + daemon (dockerd) |
+| **Includes** | Docker Engine, Compose, Kubernetes, Model Runner | Docker Engine only |
+| **License** | Free <250 employees, paid otherwise | Free (Apache 2.0) |
+| **Use case** | Development on macOS/Windows | Linux servers, CI/CD |
+
+On macOS and Windows, Docker Desktop is required because docker (the engine) only runs natively on Linux. The Desktop app manages a Linux VM transparently.
+
+**Podman Desktop vs podman:**
+
+| Aspect | Podman Desktop | podman |
+|--------|---------------|--------|
+| **Platforms** | macOS, Windows, Linux | All (native on Linux) |
+| **Architecture** | GUI app + podman machine (VM) | CLI only, daemonless |
+| **Includes** | podman, Compose support, Kubernetes | podman CLI only |
+| **License** | Free (Apache 2.0) | Free (Apache 2.0) |
+| **Use case** | Development with GUI | Servers, scripts, CI/CD |
+
+On macOS and Windows, Podman Desktop manages a "podman machine" (Linux VM). On Linux, the GUI is optional—podman runs natively without a VM.
+
+**Why "Isolated AI CLIs" recommends Docker Desktop + Model Runner:**
+- Containers isolate the AI tools from your system (security)
+- Volume mounts persist authentication across container restarts
+- Docker Model Runner enables GPU-accelerated local LLM inference on macOS (Metal) without exposing GPU to container
+- On Linux, either docker or podman works well; choose based on license/security preferences
+
+#### When to Choose Apple Container
+
+**Use Apple Container when:**
+- You're on macOS 26 and want a native, license-free solution
+- You need stronger isolation (VM-per-container vs shared kernel)
+- You're running simple, single-container workflows
+- You want minimal system footprint (no background daemon)
+- You're learning containers and want a simple CLI
+
+**Avoid Apple Container when:**
+- You need GPU acceleration (use native execution or Docker Model Runner)
+- You're running many containers simultaneously (memory overhead)
+- You need Docker Compose or multi-container orchestration
+- You're unpacking large images frequently (slow ext4 implementation)
+- You need production stability (pre-1.0 software)
 
 ---
 
@@ -541,20 +603,20 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN npm install -g @anthropic-ai/claude-code @google/gemini-cli @openai/codex
 
 # Create non-root user
-RUN useradd -m -s /bin/bash developer
+RUN useradd -m -s /bin/bash ai
 
 # Setup directories for CLI configs and workspace
-RUN mkdir -p /home/developer/.claude \
-             /home/developer/.gemini \
-             /home/developer/.codex \
-             /home/developer/workspace && \
-    chown -R developer:developer /home/developer
+RUN mkdir -p /home/ai/.claude \
+             /home/ai/.gemini \
+             /home/ai/.codex \
+             /home/ai/workspace && \
+    chown -R ai:ai /home/ai
 
-# Install uv for developer user
-USER developer
+# Install uv for ai user
+USER ai
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-WORKDIR /home/developer
+WORKDIR /home/ai
 
 # Add shell aliases and PATH
 RUN echo "alias c='claude'" >> ~/.bashrc && \
@@ -562,7 +624,7 @@ RUN echo "alias c='claude'" >> ~/.bashrc && \
     echo "alias x='codex'" >> ~/.bashrc && \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
-WORKDIR /home/developer/workspace
+WORKDIR /home/ai/workspace
 
 CMD ["/bin/bash"]
 ```
@@ -573,18 +635,18 @@ CMD ["/bin/bash"]
 
 ```bash
 # Docker
-docker build -t ai-coding-cli -f Dockerfile .
+docker build -t ai-cli -f Dockerfile .
 
 # Podman
-podman build -t ai-coding-cli -f Dockerfile .
+podman build -t ai-cli -f Dockerfile .
 
 # Rebuild without cache (to get latest CLI versions)
-docker build --no-cache -t ai-coding-cli -f Dockerfile .
+docker build --no-cache -t ai-cli -f Dockerfile .
 ```
 
 ### Running the Container
 
-> **Note:** The container paths like `/home/developer/workspace` are **Linux paths inside the container** (standard Linux home directory structure). Your host paths depend on your OS:
+> **Note:** The container paths like `/home/ai/workspace` are **Linux paths inside the container** (standard Linux home directory structure). Your host paths depend on your OS:
 > - **macOS:** `~` = `/Users/username`
 > - **Linux:** `~` = `/home/username`
 > - **Windows:** `~` = `C:\Users\username`
@@ -592,34 +654,34 @@ docker build --no-cache -t ai-coding-cli -f Dockerfile .
 **Basic usage:**
 ```bash
 # Docker
-docker run -it ai-coding-cli
+docker run -it ai-cli
 
 # Podman
-podman run -it ai-coding-cli
+podman run -it ai-cli
 ```
 
 **Mount current directory as workspace:**
 ```bash
 # Mounts your current working directory into the container
-docker run -it -v "$(pwd)":/home/developer/workspace ai-coding-cli
+docker run -it -v "$(pwd)":/home/ai/workspace ai-cli
 ```
 
 **Persist authentication credentials (recommended):**
 ```bash
 docker run -it \
-  -v ~/.claude:/home/developer/.claude \
-  -v ~/.gemini:/home/developer/.gemini \
-  -v ~/.codex:/home/developer/.codex \
-  -v "$(pwd)":/home/developer/workspace \
-  ai-coding-cli
+  -v ~/.claude:/home/ai/.claude \
+  -v ~/.gemini:/home/ai/.gemini \
+  -v ~/.codex:/home/ai/.codex \
+  -v "$(pwd)":/home/ai/workspace \
+  ai-cli
 ```
 
 | Host Path | Container Path | Purpose |
 |-----------|---------------|---------|
-| `~/.claude` | `/home/developer/.claude` | Claude Code auth & settings |
-| `~/.gemini` | `/home/developer/.gemini` | Gemini CLI auth & settings |
-| `~/.codex` | `/home/developer/.codex` | Codex CLI auth & settings (`config.toml`, sessions) |
-| `$(pwd)` | `/home/developer/workspace` | Your current project directory |
+| `~/.claude` | `/home/ai/.claude` | Claude Code auth & settings |
+| `~/.gemini` | `/home/ai/.gemini` | Gemini CLI auth & settings |
+| `~/.codex` | `/home/ai/.codex` | Codex CLI auth & settings (`config.toml`, sessions) |
+| `$(pwd)` | `/home/ai/workspace` | Your current project directory |
 
 **Using environment variables for API keys:**
 ```bash
@@ -627,8 +689,8 @@ docker run -it \
   -e ANTHROPIC_API_KEY="your-key" \
   -e OPENAI_API_KEY="your-key" \
   -e GEMINI_API_KEY="your-key" \
-  -v "$(pwd)":/home/developer/workspace \
-  ai-coding-cli
+  -v "$(pwd)":/home/ai/workspace \
+  ai-cli
 ```
 
 ### Docker Compose Setup
@@ -641,15 +703,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ai-coding-cli
-    container_name: ai-coding-assistant
+    image: ai-cli
+    container_name: ai-assistant
     stdin_open: true
     tty: true
     volumes:
-      - .:/home/developer/workspace                # Current directory
-      - claude-config:/home/developer/.claude
-      - gemini-config:/home/developer/.gemini
-      - codex-config:/home/developer/.codex
+      - .:/home/ai/workspace                # Current directory
+      - claude-config:/home/ai/.claude
+      - gemini-config:/home/ai/.gemini
+      - codex-config:/home/ai/.codex
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -676,15 +738,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ai-coding-cli
-    container_name: ai-coding-assistant
+    image: ai-cli
+    container_name: ai-assistant
     stdin_open: true
     tty: true
     volumes:
-      - .:/home/developer/workspace
-      - claude-config:/home/developer/.claude
-      - gemini-config:/home/developer/.gemini
-      - codex-config:/home/developer/.codex
+      - .:/home/ai/workspace
+      - claude-config:/home/ai/.claude
+      - gemini-config:/home/ai/.gemini
+      - codex-config:/home/ai/.codex
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -947,4 +1009,4 @@ THIS DOCUMENT AND ALL ASSOCIATED CODE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF 
 
 IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THIS DOCUMENT OR THE USE OR OTHER DEALINGS IN THIS DOCUMENT.
 
-*Last updated: 2026-01-17*
+*Last updated: 2026-01-18*
