@@ -1,6 +1,7 @@
 # Test Suite: HRV Analysis Agent
 
 **Group:** 2026-Fan-Lee-Liu  
+**Authors:** Fan Cheng-Yu, Lee Po-Lin, Liu Wu-Jun  
 **License:** Apache-2.0 (code), CC-BY-4.0 (documentation)
 
 ---
