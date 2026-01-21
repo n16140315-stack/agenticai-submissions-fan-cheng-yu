@@ -1,10 +1,10 @@
-\# Technical Report: HRV-Based Agent System for Physiological State Detection
+\# Technical Report: Multi-dimensional ECG Feature Extraction via Agentic AI
 
 
 
-\*\*Author:\*\* 2026-Lee-Po-Lin
+\*\*Author:\*\* 2026-Lee-Polin
 
-\*\*Group Members:\*\* Lee Po-Lin, Fan Cheng-Yu, Liu Wu-Jun
+\*\*Group Members:\*\* Fan Chengyu, Lee Polin, Liu Wujun
 
 \*\*License:\*\* CC-BY-4.0
 
@@ -14,59 +14,69 @@
 
 
 
-This report describes an agent-based system designed to analyze electrocardiogram (ECG) signals and assess physiological states using heart rate variability (HRV) metrics. The system combines two complementary analysis pipelines: frequency-domain HRV analysis based on NeuroKit2 and Pan-Tompkins R-peak detection, and time-domain HRV analysis with a rule-based decision agent. ECG signals are processed to extract R-peaks, RR intervals, and HRV features such as BPM, SDNN, RMSSD, and LF/HF ratio. Based on predefined physiological thresholds, the agent classifies the subject’s state as normal, fatigued, or high stress, and generates corresponding recommendations. This modular and interpretable design demonstrates how a simple agent architecture can integrate signal processing, feature extraction, and decision logic into a coherent physiological monitoring system.
+This report presents a batch-processing agent system for electrocardiogram (ECG) and photoplethysmogram (PPG) analysis, designed to extract heart rate variability (HRV) and cardiac-related physiological features. The system automatically processes multiple CSV files, performs signal normalization, Pan–Tompkins-based R-peak detection, and extracts both time-domain and frequency-domain HRV metrics, including BPM, SDNN, RMSSD, and LF/HF ratio. Additional morphological features such as P-wave candidates and ST-segment level are also estimated. The results are visualized and saved automatically for each input file. This system demonstrates how a rule-based, interpretable agent pipeline can integrate signal processing, feature extraction, and automated reporting in a scalable batch analysis framework.
 
 
 
-\## Introduction
+\## 1. Introduction
 
 
 
-Fatigue and stress significantly affect human performance, safety, and health. Traditional assessment methods often rely on subjective questionnaires or clinical equipment that is not suitable for continuous or lightweight monitoring. Heart rate variability (HRV), derived from ECG signals, provides an objective and non-invasive indicator of autonomic nervous system activity.
+ECG and PPG signals are widely used for assessing cardiovascular function and autonomic nervous system activity. HRV metrics derived from ECG provide important indicators of physiological stress, fatigue, and cardiac health. In practical scenarios, physiological data are often collected across multiple sessions or subjects, requiring automated batch analysis rather than single-file processing.
 
 
 
-The objective of this project is to develop an AI agent system that can:
-
-1\. Process raw ECG data
-
-2\. Extract meaningful HRV features
-
-3\. Perform rule-based physiological state classification
-
-4\. Provide interpretable recommendations based on analysis results
+The goal of this project is to develop an agent-based analysis system that can:
 
 
 
-Rather than focusing on complex machine learning models, this project emphasizes clarity, interpretability, and modular agent design.
+1\. Automatically process multiple ECG/PPG files
+
+2\. Perform robust signal preprocessing
+
+3\. Extract time-domain and frequency-domain HRV features
+
+4\. Identify basic cardiac morphological indicators
+
+5\. Generate visual and numerical summaries for each recording
 
 
 
-\## System Architecture
+The emphasis of this system is robustness, interpretability, and scalability rather than complex machine learning models.
 
 
 
-The proposed system follows a modular, agent-based pipeline architecture. The system is implemented using two coordinated analysis modules, each responsible for a specific stage of ECG and HRV processing.
+\## 2. System Architecture
 
 
 
-\### Overall Pipeline
+The system follows a batch-oriented agent pipeline architecture. A single Python script coordinates data loading, signal processing, feature extraction, and visualization for all files within a specified directory. Rather than interactive orchestration or model-based decision making, the architecture prioritizes reproducibility and deterministic execution for large collections of physiological recordings.
 
 
 
-1\. ECG data loading
-
-2\. Signal preprocessing and R-peak detection
-
-3\. HRV feature extraction (time and frequency domains)
-
-4\. Agent-based decision making
-
-5\. Recommendation generation
+\### 2.1 Overall Pipeline
 
 
 
-\### Component Descriptions
+1\. Dynamic path resolution and batch file discovery
+
+2\. Signal normalization and bandpass filtering
+
+3\. R-peak detection using Pan–Tompkins logic
+
+4\. HRV feature extraction (time and frequency domains)
+
+5\. Morphological feature estimation (P-wave, ST level)
+
+6\. Automated visualization and result export
+
+
+
+\### 2.2 Component Descriptions
+
+
+
+Table 1 summarizes the main functional components of the proposed system and their corresponding roles within the batch analysis pipeline.
 
 
 
@@ -74,129 +84,135 @@ The proposed system follows a modular, agent-based pipeline architecture. The sy
 
 |---------|------|-------------|
 
-| ECG Loader | Tool | Reads ECG data from CSV files and extracts signal columns |
+| Path Manager | Tool | Dynamically resolves project paths and locates CSV files |
 
-| Signal Processor | Tool | Performs ECG cleaning and R-peak detection |
+| ECG/PPG Loader | Tool | Reads multi-channel CSV data and selects ECG/PPG signals |
 
-| Frequency HRV Analyzer | Tool | Computes LF, HF, and LF/HF ratio using NeuroKit2 |
+| Signal Preprocessor | Tool | Applies detrending, normalization, and bandpass filtering |
 
-| Time-Domain HRV Analyzer | Tool | Computes BPM, SDNN, and RMSSD from RR intervals |
+| R-Peak Detector | Tool | Detects R-peaks using Pan–Tompkins-inspired processing |
 
-| DecisionAgent | Agent | Classifies physiological state using rule-based thresholds |
+| HRV Extractor | Tool | Computes BPM, SDNN, RMSSD, and LF/HF ratio |
 
-| ActionAgent | Agent | Outputs human-readable recommendations based on state |
+| Morphology Analyzer | Tool | Estimates P-wave candidates and ST-segment level |
 
+| Visualization Agent | Agent | Generates plots and saves result images automatically |
 
 
-The two analysis pipelines operate on the same ECG data and together form a unified agent system.
 
+\## 3. Implementation
 
 
-\## Implementation
 
+The following sections describe the technical implementation of the proposed system, with emphasis on how each processing stage corresponds to concrete algorithmic operations in the batch execution script.
 
 
-\### ECG Data Processing and Frequency-Domain Analysis
 
+\### 3.1 Batch Processing and File Management
 
 
-One module uses NeuroKit2 to perform ECG signal cleaning and R-peak detection based on the Pan-Tompkins algorithm. After detecting R-peaks, frequency-domain HRV metrics are computed, including LF power, HF power, and the LF/HF ratio. Power spectral density is calculated using Welch’s method, and visualization is generated with VHF components excluded to improve interpretability.
 
+The system automatically discovers all CSV files within a predefined data directory using dynamic path resolution. This design allows the analysis script to be executed from different directory locations without manual path modification. Each file is processed independently within an iterative loop, ensuring that failures in individual recordings do not interrupt the overall batch analysis.
 
 
-Key steps include:
 
-\- ECG signal stitching and cleaning
+\### 3.2 Signal Preprocessing
 
-\- Pan-Tompkins R-peak detection
 
-\- Frequency-domain HRV computation
 
-\- HRV spectrum visualization and reporting
+Raw ECG and PPG signals are first detrended and normalized using a robust normalization strategy based on mean removal and variance scaling. This step mitigates inter-file amplitude variability and sensor-specific DC offsets, which were observed to cause waveform saturation or near-flat signals during preliminary testing. After normalization, ECG signals are passed through a 5–15 Hz bandpass filter to enhance QRS complexes and suppress baseline wander and high-frequency noise prior to peak detection.
 
 
 
-\### Time-Domain HRV Analysis and Agent Decision Logic
+\### 3.3 R-Peak Detection
 
 
 
-The second module focuses on time-domain HRV analysis using RR intervals derived from detected R-peaks. Metrics such as BPM, SDNN, and RMSSD are calculated. These features are then passed to a rule-based agent system.
+R-peaks are detected using a simplified Pan–Tompkins-inspired pipeline consisting of signal differentiation, squaring, and moving-window integration. Peak candidates are identified using amplitude and refractory constraints to prevent physiologically implausible detections. Files with insufficient detected R-peaks are excluded from subsequent feature extraction to avoid unstable HRV calculations.
 
 
 
-The DecisionAgent classifies physiological states using predefined thresholds:
+\### 3.4 HRV Feature Extraction
 
-\- High stress: elevated BPM with high RMSSD
 
-\- Fatigue: low RMSSD
 
-\- Normal: values within typical physiological ranges
+RR intervals are computed from detected R-peaks and converted to milliseconds. Time-domain HRV metrics, including BPM, SDNN, and RMSSD, are calculated directly from these intervals. For frequency-domain analysis, Welch’s method is applied to the RR interval series to estimate power spectral density. LF and HF band powers are integrated using numerical trapezoidal integration, and the LF/HF ratio is derived as an indicator of autonomic balance.
 
 
 
-The ActionAgent converts the detected state into a clear recommendation, such as resting, light activity, or maintaining current behavior.
+\### 3.5 Morphological Feature Estimation
 
 
 
-\## Results
+In addition to HRV metrics, the system performs basic ECG morphological estimation. P-wave candidate locations are identified using a fixed pre-R search window, where the maximum signal amplitude within the window is selected as a heuristic P-wave estimate. ST-segment level is approximated by sampling the ECG signal at a fixed temporal offset following each R-peak and averaging across beats. These morphological features are included to provide complementary structural information beyond interval-based HRV analysis.
 
 
 
-The system successfully processes ECG recordings and produces interpretable HRV metrics in both time and frequency domains. For each ECG segment, the system outputs:
+\### 3.6 Visualization and Output
 
-\- BPM, SDNN, RMSSD
 
-\- LF, HF, and LF/HF ratio
 
-\- Classified physiological state
+For each processed file, the system generates annotated ECG plots displaying detected R-peaks and estimated P-wave candidates, along with corresponding PPG signal plots for reference. A summary text box containing key numerical metrics is embedded directly within the ECG visualization. All output figures are automatically saved using the source filename, ensuring traceability between raw data and generated results.
 
-\- Text-based recommendation
 
 
+\## 4. Results
 
-Visual outputs include ECG waveforms with R-peaks marked and HRV frequency spectra. The results demonstrate that rule-based agents can effectively map physiological indicators to meaningful states without requiring complex models.
 
 
+The system successfully processes multiple ECG/PPG recordings in a fully automated manner. For each file, the output includes numerical HRV metrics, estimated ST-segment level, annotated ECG and PPG visualizations, and saved result images for offline review. The batch-oriented design enables efficient analysis of heterogeneous physiological datasets without manual file handling or interactive intervention.
 
-\## Discussion
 
 
+\## 5. Discussion
 
-\### Strengths
 
-\- Clear and interpretable agent logic
 
-\- Modular design allows independent testing of each component
+\### 5.1 Strengths
 
-\- Combines time-domain and frequency-domain HRV analysis
 
 
+\- Fully automated batch processing with deterministic execution
 
-\### Limitations
+\- Robust normalization addressing inter-file amplitude variability
 
-\- Rule-based thresholds may not generalize across all individuals
+\- Integration of HRV metrics with basic ECG morphological estimation
 
-\- No personalized baseline calibration
+\- Clear and interpretable rule-based design aligned with signal processing principles
 
-\- Offline analysis only; not real-time
 
 
+\### 5.2 Limitations
 
-\### Lessons Learned
 
-This project highlights the importance of system architecture and interpretability in agent-based systems. Even simple decision rules can provide useful insights when combined with robust signal processing.
 
+\- Fixed temporal windows and thresholds may not generalize across populations
 
+\- P-wave detection relies on heuristic rules and is not clinically validated
 
-\## Conclusion
+\- No subject-specific baseline adaptation or temporal modeling
 
+\- Offline analysis only, without real-time streaming support
 
 
-This project demonstrates a modular AI agent system for ECG-based HRV analysis and physiological state detection. By integrating frequency-domain analysis, time-domain metrics, and rule-based decision agents, the system provides a transparent and extensible framework for fatigue and stress assessment. Future work may include personalized thresholds, temporal modeling, and real-time deployment.
 
+\### 5.3 Lessons Learned
 
 
-\## References
+
+This project highlights the importance of explicitly aligning system architecture descriptions with actual implementation logic. Even without machine learning models, carefully structured signal processing pipelines can deliver scalable and interpretable physiological analysis when batch robustness and reproducibility are prioritized.
+
+
+
+\## 6. Conclusion
+
+
+
+This project demonstrates a batch-oriented ECG/PPG analysis agent system capable of extracting HRV and cardiac-related features from multiple recordings automatically. By combining robust preprocessing, interval-based HRV computation, heuristic morphological estimation, and automated visualization, the system provides a transparent and scalable framework for physiological data analysis. Future work may incorporate adaptive thresholds, subject-specific baselines, and real-time processing capabilities.
+
+
+
+\## 7. References
 
 
 
@@ -205,8 +221,4 @@ Pan, J., \& Tompkins, W. J. (1985). A real-time QRS detection algorithm. IEEE Tr
 
 
 Task Force of the European Society of Cardiology and the North American Society of Pacing and Electrophysiology. (1996). Heart rate variability: standards of measurement, physiological interpretation and clinical use. Circulation, 93(5), 1043–1065.
-
-
-
-NeuroKit2 Documentation: https://neurokit2.readthedocs.io/
 
